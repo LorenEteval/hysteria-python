@@ -6,6 +6,9 @@ provides a bridge to start hysteria client directly from Python on any platform.
 Looking for [Xray-core](https://github.com/XTLS/Xray-core) bindings?
 Check [Xray-core-python](https://github.com/LorenEteval/Xray-core-python).
 
+See the real-world production GUI client that takes advantage of the Python binding:
+[Furious](https://github.com/LorenEteval/Furious).
+
 ## Start
 
 To use this binding, please first make sure that:
@@ -76,17 +79,24 @@ the version of the origin source code tag, so the binding will have full feature
 have. And due to its backward compatibility, there's no plan to generate bindings for older release of hysteria.
 
 To make installation of this package easier, I didn't add the original [hysteria](https://github.com/apernet/hysteria)
-source code as a submodule. To track what modifications have been to the source code, you can compare it with the same
-version under Python binding and corresponding go repository.
+source code as a submodule. To track what modifications have been made to the source code, you can compare it with the
+same version under Python binding and corresponding go repository.
 
 ## Tested Platform
 
-This package should behave well in all platform that go and Python target on. I built and ran the binding successfully
-on:
+hysteria-python works on all major platform with all Python version(Python 3).
 
-* macOS 12.5.1 Apple Silicon
-* Ubuntu 20.04, Ubuntu 22.04
-* Windows 11 22H2
+Below are tested build in [github actions](https://github.com/LorenEteval/hysteria-python/actions).
+
+| Platform     | Python 3.7-Python 3.11 |
+|--------------|:----------------------:|
+| ubuntu 20.04 |   :heavy_check_mark:   |
+| ubuntu 22.04 |   :heavy_check_mark:   |
+| windows-2019 |   :heavy_check_mark:   |
+| windows-2022 |   :heavy_check_mark:   |
+| macos-11     |   :heavy_check_mark:   |
+| macos-12     |   :heavy_check_mark:   |
+| macos-13     |   :heavy_check_mark:   |
 
 ## License
 
