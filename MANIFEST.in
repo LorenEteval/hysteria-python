@@ -1,0 +1,7 @@
+recursive-include gobuild *
+recursive-include hysteria hysteria.*
+recursive-include hysteria-go *
+recursive-include pybind11 *
+recursive-include src *
+include CMakeLists.txt
+include README.md
