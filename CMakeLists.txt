@@ -11,8 +11,6 @@ add_subdirectory(pybind11)
 pybind11_add_module(${PROJECT_NAME} src/hysteria.cpp)
 
 if (WIN32)
-    add_compile_definitions(HYSTERIA_WIN32)
-
     if (MINGW)
         target_compile_options(${PROJECT_NAME} PRIVATE "-Wa,-mbig-obj")
         target_link_options(
