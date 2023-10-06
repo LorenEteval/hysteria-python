@@ -16,7 +16,7 @@ CMAKE_BUILD_CACHE = 'CMakeBuildCache'
 def getHysteriaVersion():
     # Hysteria version is specified by environment variables.
     # Specify a fixed version corresponding to the git tag
-    return '1.3.5'
+    return '1.3.5.1'
 
 
 def runCommand(command):
