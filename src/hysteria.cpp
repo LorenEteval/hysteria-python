@@ -18,7 +18,13 @@ namespace {
         GoSlice mmdbBytes{const_cast<void*>(static_cast<const void*>(mmdb.data())),
             static_cast<GoInt>(mmdb.size()), static_cast<GoInt>(mmdb.size())};
 
-        startClientFromJSON(jsonString, ruleString, mmdbBytes);
+        {
+            py::gil_scoped_release release;
+
+            startClientFromJSON(jsonString, ruleString, mmdbBytes);
+
+            py::gil_scoped_acquire acquire;
+        }
     }
 
     PYBIND11_MODULE(hysteria, m) {
