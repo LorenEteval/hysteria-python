@@ -1,6 +1,6 @@
 # hysteria-python
 
-[![Build hysteria binding](https://github.com/LorenEteval/hysteria-python/actions/workflows/wheels.yml/badge.svg?branch=main)](https://github.com/LorenEteval/hysteria-python/actions/workflows/wheels.yml)
+[![Deploy PyPI](https://github.com/LorenEteval/hysteria-python/actions/workflows/deploy-pypi.yml/badge.svg?branch=main)](https://github.com/LorenEteval/hysteria-python/actions/workflows/deploy-pypi.yml)
 
 Python bindings for [hysteria](https://github.com/apernet/hysteria), a feature-packed proxy & relay tool. This package
 provides a bridge to start hysteria client directly from Python on any platform.
