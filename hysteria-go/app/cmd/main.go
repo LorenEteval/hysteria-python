@@ -99,7 +99,7 @@ var rootCmd = &cobra.Command{
 //export startClientFromJSON
 func startClientFromJSON(jsonString string, ruleString string, mmdbBytes []byte) {
 	// client mode
-	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetLevel(logrus.InfoLevel)
 
 	cc, err := parseClientConfig([]byte(jsonString))
 	if err != nil {
