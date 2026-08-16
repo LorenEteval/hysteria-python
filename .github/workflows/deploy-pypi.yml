@@ -110,7 +110,7 @@ jobs:
             MACOSX_DEPLOYMENT_TARGET=${{ matrix.macos-target }}
 
       - name: Store wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheels-${{ matrix.platform }}-${{ matrix.arch }}
           path: wheelhouse/*.whl
@@ -130,7 +130,7 @@ jobs:
           python -m pip install --upgrade build
           python -m build --sdist
       - name: Store source distribution
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sdist
           path: dist/*.tar.gz
@@ -177,7 +177,7 @@ jobs:
               )
               print(f"{wheel.name}: {', '.join(tags)}")
       - name: Store all distribution packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: python-package-distributions
           path: dist/*
