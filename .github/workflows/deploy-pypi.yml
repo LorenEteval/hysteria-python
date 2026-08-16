@@ -39,7 +39,7 @@ jobs:
 
       # Linux builds run in manylinux containers. Go is installed there by
       # tool.cibuildwheel.linux.before-all in pyproject.toml.
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         if: matrix.platform != 'linux'
         with:
           go-version: "1.20.14"
