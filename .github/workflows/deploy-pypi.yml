@@ -14,9 +14,17 @@ jobs:
             os: ubuntu-24.04
             arch: x86_64
             macos-target: ""
+          - platform: linux
+            os: ubuntu-24.04-arm
+            arch: aarch64
+            macos-target: ""
           - platform: windows
             os: windows-2022
             arch: AMD64
+            macos-target: ""
+          - platform: windows
+            os: windows-11-arm
+            arch: ARM64
             macos-target: ""
           - platform: macos
             os: macos-15-intel
@@ -42,9 +50,50 @@ jobs:
             hysteria-go/core/go.sum
 
       - uses: egor-tensin/setup-mingw@v2
-        if: matrix.platform == 'windows'
+        if: matrix.platform == 'windows' && matrix.arch == 'AMD64'
         with:
           platform: x64
+
+      # GCC does not target Windows ARM64. Use an ARM-native LLVM-MinGW
+      # distribution so Go/cgo and CMake produce compatible ARM64 objects.
+      - name: Install LLVM-MinGW for Windows ARM64
+        if: matrix.platform == 'windows' && matrix.arch == 'ARM64'
+        shell: pwsh
+        run: |
+          $archiveName = 'llvm-mingw-20260616-ucrt-aarch64.zip'
+          $archivePath = Join-Path $env:RUNNER_TEMP $archiveName
+          $destinationPath = Join-Path $env:RUNNER_TEMP 'llvm-mingw'
+          $url = "https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/$archiveName"
+          $expectedSha256 = '312593669435bd0bfc1a43ac3fba23c8b27e0610bade88b2738e5a01702a99ba'
+
+          Invoke-WebRequest -Uri $url -OutFile $archivePath
+          $actualSha256 = (Get-FileHash -Path $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualSha256 -ne $expectedSha256) {
+              throw "LLVM-MinGW checksum mismatch: $actualSha256"
+          }
+
+          Expand-Archive -Path $archivePath -DestinationPath $destinationPath
+          $toolchainBin = Get-ChildItem -Path $destinationPath -Filter gcc.exe -File -Recurse |
+            Where-Object { $_.Directory.Name -eq 'bin' } |
+            Select-Object -First 1 -ExpandProperty DirectoryName
+          if (-not $toolchainBin) {
+              throw 'LLVM-MinGW bin directory was not found'
+          }
+
+          $gcc = Join-Path $toolchainBin 'gcc.exe'
+          $target = (& $gcc -dumpmachine).Trim()
+          if ($target -ne 'aarch64-w64-windows-gnu') {
+              throw "Unexpected LLVM-MinGW target: $target"
+          }
+
+          $goArch = (& go env GOARCH).Trim()
+          if ($goArch -ne 'arm64') {
+              throw "Unexpected Go architecture: $goArch"
+          }
+
+          $toolchainBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          'CC=gcc' | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          'CXX=g++' | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Verify native build tools
         if: matrix.platform != 'linux'
