@@ -53,6 +53,6 @@ namespace {
             "Start Hysteria client with JSON, ACL rule and MMDB",
             py::arg("json"), py::arg("rule") = "", py::arg("mmdb") = "");
 
-        m.attr("__version__") = "1.3.5.2";
+        m.attr("__version__") = "1.3.5.3";
     }
 }

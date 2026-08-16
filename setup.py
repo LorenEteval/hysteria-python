@@ -18,7 +18,7 @@ BINDING_NAME = 'hysteria'
 def getHysteriaVersion():
     # Hysteria version is specified by environment variables.
     # Specify a fixed version corresponding to the git tag.
-    return '1.3.5.2'
+    return '1.3.5.3'
 
 
 def runCommand(command, *, env=None):
