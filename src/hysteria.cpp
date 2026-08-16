@@ -27,7 +27,7 @@ namespace {
         }
     }
 
-    PYBIND11_MODULE(hysteria, m) {
+    PYBIND11_MODULE(hysteria, m, py::mod_gil_not_used()) {
         m.def("startFromJSON",
             &startFromJSON,
             "Start Hysteria client with JSON, ACL rule and MMDB",

@@ -1,94 +1,167 @@
 name: Deploy PyPI
 
-on: [ push, pull_request ]
+on: [push, pull_request]
 
 jobs:
-  build:
-    name: ${{ matrix.os }} Python ${{ matrix.python-version }}
+  build-wheels:
+    name: Wheels (${{ matrix.platform }} ${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
-    continue-on-error: true
     strategy:
+      fail-fast: false
       matrix:
-        os: [ ubuntu-22.04, ubuntu-24.04, windows-2022, windows-2025, macos-15-intel, macos-14, macos-15 ]
-        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", "3.14" ]
+        include:
+          - platform: linux
+            os: ubuntu-24.04
+            arch: x86_64
+            macos-target: ""
+          - platform: windows
+            os: windows-2022
+            arch: AMD64
+            macos-target: ""
+          - platform: macos
+            os: macos-15-intel
+            arch: x86_64
+            macos-target: "10.13"
+          - platform: macos
+            os: macos-15
+            arch: arm64
+            macos-target: "11.0"
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v4
+      - uses: actions/checkout@v4
+
+      # Linux builds run in manylinux containers. Go is installed there by
+      # tool.cibuildwheel.linux.before-all in pyproject.toml.
+      - uses: actions/setup-go@v5
+        if: matrix.platform != 'linux'
         with:
-          go-version: "1.20"
-          check-latest: true
-      - uses: actions/setup-python@v5
+          go-version: "1.20.14"
+          check-latest: false
+          cache-dependency-path: |
+            hysteria-go/go.work.sum
+            hysteria-go/app/go.sum
+            hysteria-go/core/go.sum
+
+      - uses: egor-tensin/setup-mingw@v2
+        if: matrix.platform == 'windows'
         with:
-          python-version: ${{ matrix.python-version }}
-          check-latest: true
-      - name: Install, build & run sample
+          platform: x64
+
+      - name: Verify native build tools
+        if: matrix.platform != 'linux'
+        shell: bash
         run: |
           go version
-          python -c "import sys; print(sys.version)"
-          python -m pip install --upgrade pip
-          python -m pip install setuptools wheel
-          python setup.py sdist
-          python setup.py install
-          python sample/sample.py
+          cmake --version
+          c++ --version
 
-  store:
-    name: Store the distribution packages
-    runs-on: ubuntu-latest
-    needs:
-      - build
+      - uses: pypa/cibuildwheel@v3.4.1
+        env:
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_ENVIRONMENT_MACOS: >-
+            MACOSX_DEPLOYMENT_TARGET=${{ matrix.macos-target }}
+
+      - name: Store wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.platform }}-${{ matrix.arch }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+
+  build-sdist:
+    name: Source distribution
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           check-latest: true
-      - name: Install & build
+      - name: Build source distribution
         run: |
-          python -c "import sys; print(sys.version)"
-          python -m pip install --upgrade pip
-          python -m pip install setuptools wheel
-          python setup.py sdist
-      - name: Store the distribution packages
+          python -m pip install --upgrade build
+          python -m build --sdist
+      - name: Store source distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  store:
+    name: Collect and validate distributions
+    runs-on: ubuntu-24.04
+    needs: [build-wheels, build-sdist]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
+      - name: Validate distribution tags and metadata
+        shell: python
+        run: |
+          import email
+          import pathlib
+          import zipfile
+
+          dist = pathlib.Path("dist")
+          sdists = list(dist.glob("*.tar.gz"))
+          wheels = list(dist.glob("*.whl"))
+          assert len(sdists) == 1, sdists
+          assert wheels, "no wheels were collected"
+          for wheel in wheels:
+              assert not wheel.name.endswith("-none-any.whl"), wheel.name
+              with zipfile.ZipFile(wheel) as archive:
+                  wheel_metadata = next(
+                      name for name in archive.namelist()
+                      if name.endswith(".dist-info/WHEEL")
+                  )
+                  metadata = email.message_from_bytes(archive.read(wheel_metadata))
+              assert metadata["Root-Is-Purelib"] == "false", wheel.name
+              tags = metadata.get_all("Tag", [])
+              assert tags and all(not tag.endswith("-any") for tag in tags), (
+                  wheel.name, tags
+              )
+              print(f"{wheel.name}: {', '.join(tags)}")
+      - name: Store all distribution packages
         uses: actions/upload-artifact@v4
         with:
           name: python-package-distributions
-          path: |
-            dist/*.tar.gz
-            dist/*.whl
+          path: dist/*
+          if-no-files-found: error
 
   publish-to-pypi:
-    name: >-
-      Publish Python 🐍 distribution 📦 to PyPI
-    if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
-    needs:
-      - build
-      - store
+    name: Publish Python distributions to PyPI
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [store]
     runs-on: ubuntu-latest
     environment:
       name: deploy-pypi
       url: https://pypi.org/p/hysteria
     permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+      id-token: write
     steps:
-      - name: Download all the dists
+      - name: Download all distributions
         uses: actions/download-artifact@v4
         with:
           name: python-package-distributions
           path: dist/
-      - name: Publish distribution 📦 to PyPI
+      - name: Publish distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
   github-release:
-    name: >-
-      Upload to GitHub Release
-    needs:
-      - publish-to-pypi
+    name: Upload to GitHub Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [publish-to-pypi]
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # IMPORTANT: mandatory for making GitHub Releases
-      id-token: write  # IMPORTANT: mandatory for sigstore
+      contents: write
     steps:
-      - name: Download all the dists
+      - name: Download all distributions
         uses: actions/download-artifact@v4
         with:
           name: python-package-distributions
@@ -101,10 +174,9 @@ jobs:
           '${{ github.ref_name }}'
           --repo '${{ github.repository }}'
           --notes ""
-      - name: Upload artifact to GitHub Release
+      - name: Upload distributions to GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        # Upload to GitHub Release using the `gh` CLI.
         run: >-
           gh release upload
           '${{ github.ref_name }}' dist/**

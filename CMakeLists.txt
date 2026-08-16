@@ -1,12 +1,21 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
 project(hysteria C CXX)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/lib/${PROJECT_NAME})
+set(
+    CMAKE_LIBRARY_OUTPUT_DIRECTORY
+    "${CMAKE_SOURCE_DIR}/build/lib/${PROJECT_NAME}"
+    CACHE PATH "Directory for the Python extension"
+)
+set(
+    HYSTERIA_GO_BUILD_DIR
+    "${CMAKE_SOURCE_DIR}/gobuild"
+    CACHE PATH "Directory containing the Go c-archive and generated header"
+)
 
-add_subdirectory(pybind11)
+find_package(pybind11 CONFIG REQUIRED)
 
 pybind11_add_module(${PROJECT_NAME} src/hysteria.cpp)
 
@@ -24,12 +33,12 @@ if (WIN32)
 
     target_link_libraries(
         ${PROJECT_NAME} PRIVATE
-        ${CMAKE_SOURCE_DIR}/gobuild/hysteria.lib
+        ${HYSTERIA_GO_BUILD_DIR}/hysteria.lib
     )
 else ()
     target_link_libraries(
         ${PROJECT_NAME} PRIVATE
-        ${CMAKE_SOURCE_DIR}/gobuild/hysteria.a
+        ${HYSTERIA_GO_BUILD_DIR}/hysteria.a
         "-lresolv"
     )
 
@@ -42,4 +51,4 @@ else ()
     endif ()
 endif ()
 
-target_include_directories(${PROJECT_NAME} PRIVATE gobuild)
+target_include_directories(${PROJECT_NAME} PRIVATE ${HYSTERIA_GO_BUILD_DIR})
