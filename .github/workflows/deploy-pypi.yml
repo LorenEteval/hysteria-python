@@ -42,8 +42,8 @@ jobs:
       - uses: actions/setup-go@v7
         if: matrix.platform != 'linux'
         with:
-          go-version: "1.20.14"
-          check-latest: false
+          go-version: "1.20"
+          check-latest: true
           cache-dependency-path: |
             hysteria-go/go.work.sum
             hysteria-go/app/go.sum
