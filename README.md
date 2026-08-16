@@ -2,52 +2,30 @@
 
 [![Deploy PyPI](https://github.com/LorenEteval/hysteria-python/actions/workflows/deploy-pypi.yml/badge.svg?branch=main)](https://github.com/LorenEteval/hysteria-python/actions/workflows/deploy-pypi.yml)
 
-Python bindings for [hysteria](https://github.com/apernet/hysteria), a feature-packed proxy & relay tool. This package
-provides a bridge to start hysteria client directly from Python on any platform.
-
-Looking for [Xray-core](https://github.com/XTLS/Xray-core) bindings?
-Check [Xray-core-python](https://github.com/LorenEteval/Xray-core-python).
-
-See the real-world production GUI client that takes advantage of the Python binding:
-[Furious](https://github.com/LorenEteval/Furious).
-
-## Start
-
-To use this binding, please first make sure that:
-
-* You are a Python developer, or your application is associated with this package.
-* You are building a client application. There is no point to use binding on the server side.
-* You want to provide additional abstraction for your client. The core(i.e. hysteria) will be shipped with your
-  application as dynamic link library, not an executable.
-* This bridge provides functionality to start hysteria directly from Python string(see the API below). What that means
-  is that the client config stays in memory all the time, and cannot(or very hard to) be inspected. So you can, for
-  example, get a configuration template from a remote server and edit it for a group of specific client and start the
-  service.
+Python bindings for [hysteria](https://github.com/apernet/hysteria), a feature-packed proxy & relay tool.
 
 ## Install
 
-### Core Building Tools
-
-You have to install the following tools to be able to install this package successfully.
-
-* [go](https://go.dev/doc/install) in your PATH. go 1.20.0 and above is recommended. To check go is ready,
-  type `go version`. Also, if google service is blocked in your region(such as Mainland China), you have to configure
-  your GOPROXY to be able to pull go packages. For Chinese users, refer to [goproxy.cn](https://goproxy.cn/) for more
-  information.
-* [cmake](https://cmake.org/download/) in your PATH. To check cmake is ready, type `cmake --version`.
-* A working GNU C++ compiler(i.e. GNU C++ toolchains). To check GNU C++ compiler is ready, type `g++ --version`. These
-  tools should have been installed in Linux or macOS by default. If you don't have GNU C++ toolchains(especially for
-  Windows users) anyway:
-
-    * For Linux users: type `sudo apt update && sudo apt install g++` and that should work out fine.
-    * For Windows users: install [MinGW-w64](https://sourceforge.net/projects/mingw-w64/files/mingw-w64/)
-      or [Cygwin](https://www.cygwin.com/) and make sure you have add them to PATH.
-
-### Install Package
+Install the package from PyPI:
 
 ```
 pip install hysteria
 ```
+
+Binary wheels include the native Hysteria binding, so installing a supported Python and platform combination does not
+require Go, CMake, or a C/C++ compiler.
+
+### Building from Source
+
+If pip cannot find a compatible wheel, it may fall back to the source distribution. Building from source requires:
+
+* [Go](https://go.dev/doc/install) 1.20 or newer in your PATH.
+* [CMake](https://cmake.org/download/) in your PATH.
+* A compatible C/C++ compiler toolchain: GCC or Clang on Linux, Apple Clang on macOS, MinGW-w64 on Windows x86_64,
+  or LLVM-MinGW on Windows ARM64.
+
+If Google services are blocked in your region, configure `GOPROXY` before building. Chinese users can refer
+to [goproxy.cn](https://goproxy.cn/) for more information.
 
 ## API
 
@@ -86,19 +64,22 @@ same version under Python binding and corresponding go repository.
 
 ## Tested Platform
 
-hysteria-python works on all major platform with all Python version(Python 3).
+hysteria-python provides binary wheels for CPython 3.8 through 3.14, including the free-threaded CPython 3.13 and 3.14
+variants. Windows ARM64 starts at CPython 3.9 because CPython 3.8 ARM64 wheels are not available through cibuildwheel.
+The free-threaded interpreters are supported for installation, but importing the native extension currently enables
+the GIL.
 
-Below are tested build in [github actions](https://github.com/LorenEteval/hysteria-python/actions).
+Every wheel is built and tested in [GitHub Actions](https://github.com/LorenEteval/hysteria-python/actions) on its native
+platform before release.
 
-| Platform     | Python 3.7-Python 3.11 |
-|--------------|:----------------------:|
-| ubuntu 20.04 |   :heavy_check_mark:   |
-| ubuntu 22.04 |   :heavy_check_mark:   |
-| windows-2019 |   :heavy_check_mark:   |
-| windows-2022 |   :heavy_check_mark:   |
-| macos-11     |   :heavy_check_mark:   |
-| macos-12     |   :heavy_check_mark:   |
-| macos-13     |   :heavy_check_mark:   |
+| Platform | Architecture | Supported CPython |
+|----------|:------------:|:-----------------:|
+| Linux    | x86_64       | 3.8-3.14, 3.13t, 3.14t |
+| Linux    | ARM64        | 3.8-3.14, 3.13t, 3.14t |
+| Windows  | x86_64       | 3.8-3.14, 3.13t, 3.14t |
+| Windows  | ARM64        | 3.9-3.14, 3.13t, 3.14t |
+| macOS    | Intel        | 3.8-3.14, 3.13t, 3.14t |
+| macOS    | Apple Silicon | 3.8-3.14, 3.13t, 3.14t |
 
 ## License
 
