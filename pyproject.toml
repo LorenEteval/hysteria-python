@@ -9,7 +9,8 @@ build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
 build = "cp3{8,9,10,11,12,13,14,14t}-*"
-skip = "*-musllinux_*"
+# cibuildwheel does not provide a CPython 3.8 build for Windows ARM64.
+skip = "*-musllinux_* cp38-win_arm64"
 build-verbosity = 1
 test-sources = ["sample"]
 test-command = "python sample/sample.py"
@@ -17,16 +18,32 @@ test-command = "python sample/sample.py"
 [tool.cibuildwheel.linux]
 archs = ["x86_64"]
 manylinux-x86_64-image = "manylinux_2_28"
-before-all = [
-    "dnf install -y curl",
-    "curl -fsSL https://go.dev/dl/go1.20.14.linux-amd64.tar.gz -o /tmp/go1.20.14.linux-amd64.tar.gz",
-    "echo 'ff445e48af27f93f66bd949ae060d97991c83e11289009d311f25426258f9c44  /tmp/go1.20.14.linux-amd64.tar.gz' | sha256sum -c -",
-    "rm -rf /usr/local/go",
-    "tar -C /usr/local -xzf /tmp/go1.20.14.linux-amd64.tar.gz",
-    "ln -sf /usr/local/go/bin/go /usr/local/bin/go",
-    "/usr/local/bin/go version",
-    "gcc --version",
-]
+manylinux-aarch64-image = "manylinux_2_28"
+before-all = """
+dnf install -y curl
+case "$(uname -m)" in
+    x86_64)
+        go_arch='amd64'
+        go_sha256='ff445e48af27f93f66bd949ae060d97991c83e11289009d311f25426258f9c44'
+        ;;
+    aarch64|arm64)
+        go_arch='arm64'
+        go_sha256='2096507509a98782850d1f0669786c09727053e9fe3c92b03c0d96f48700282b'
+        ;;
+    *)
+        echo "Unsupported Linux architecture: $(uname -m)" >&2
+        exit 1
+        ;;
+esac
+go_archive="/tmp/go1.20.14.linux-${go_arch}.tar.gz"
+curl -fsSLo "${go_archive}" "https://go.dev/dl/go1.20.14.linux-${go_arch}.tar.gz"
+echo "${go_sha256}  ${go_archive}" | sha256sum -c -
+rm -rf /usr/local/go
+tar -C /usr/local -xzf "${go_archive}"
+/usr/local/go/bin/go version
+gcc --version
+"""
+environment = { PATH = "/usr/local/go/bin:$PATH" }
 
 [tool.cibuildwheel.windows]
 archs = ["AMD64"]
