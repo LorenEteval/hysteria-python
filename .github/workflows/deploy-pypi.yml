@@ -13,27 +13,21 @@ jobs:
           - platform: linux
             os: ubuntu-24.04
             arch: x86_64
-            macos-target: ""
           - platform: linux
             os: ubuntu-24.04-arm
             arch: aarch64
-            macos-target: ""
           - platform: windows
             os: windows-2022
             arch: AMD64
-            macos-target: ""
           - platform: windows
             os: windows-11-arm
             arch: ARM64
-            macos-target: ""
           - platform: macos
             os: macos-15-intel
             arch: x86_64
-            macos-target: "10.13"
           - platform: macos
             os: macos-15
             arch: arm64
-            macos-target: "11.0"
     steps:
       - uses: actions/checkout@v7
 
@@ -103,11 +97,19 @@ jobs:
           cmake --version
           c++ --version
 
-      - uses: pypa/cibuildwheel@v3.4.1
+      - name: Build supported wheels
+        uses: pypa/cibuildwheel@v4.2.0
         env:
           CIBW_ARCHS: ${{ matrix.arch }}
-          CIBW_ENVIRONMENT_MACOS: >-
-            MACOSX_DEPLOYMENT_TARGET=${{ matrix.macos-target }}
+
+      # cibuildwheel 4 dropped CPython 3.8 and the experimental 3.13t build.
+      # Use the last release supporting both for only those compatibility wheels.
+      - name: Build CPython 3.8 and 3.13t compatibility wheels
+        uses: pypa/cibuildwheel@v3.4.1
+        env:
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_BUILD: "cp38-* cp313t-*"
+          CIBW_ENABLE: cpython-freethreading
 
       - name: Store wheels
         uses: actions/upload-artifact@v7

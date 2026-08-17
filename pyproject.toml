@@ -8,28 +8,15 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
-build = [
-    "cp38-*",
-    "cp39-*",
-    "cp310-*",
-    "cp311-*",
-    "cp312-*",
-    "cp313-*",
-    "cp313t-*",
-    "cp314-*",
-    "cp314t-*",
-]
-enable = ["cpython-freethreading"]
+# cibuildwheel 4 no longer supports CPython 3.8 or 3.13t; the workflow builds
+# those compatibility wheels separately with cibuildwheel 3.4.1.
+build = "cp3{9,10,11,12,13,14,14t}-*"
 # cibuildwheel does not provide a CPython 3.8 build for Windows ARM64.
 skip = "*-musllinux_* cp38-win_arm64"
-build-verbosity = 1
 test-sources = ["sample"]
 test-command = "python sample/sample.py"
 
 [tool.cibuildwheel.linux]
-archs = ["x86_64"]
-manylinux-x86_64-image = "manylinux_2_28"
-manylinux-aarch64-image = "manylinux_2_28"
 before-all = """
 dnf install -y curl
 case "$(uname -m)" in
@@ -56,5 +43,7 @@ gcc --version
 """
 environment = { PATH = "/usr/local/go/bin:$PATH" }
 
-[tool.cibuildwheel.windows]
-archs = ["AMD64"]
+[tool.cibuildwheel.macos.environment]
+# cibuildwheel raises this to each interpreter/architecture's minimum (11.0
+# for Apple Silicon), preserving the existing deployment targets.
+MACOSX_DEPLOYMENT_TARGET = "10.13"
