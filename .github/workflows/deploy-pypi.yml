@@ -105,7 +105,7 @@ jobs:
       # cibuildwheel 4 dropped CPython 3.8 and the experimental 3.13t build.
       # Use the last release supporting both for only those compatibility wheels.
       - name: Build CPython 3.8 and 3.13t compatibility wheels
-        uses: pypa/cibuildwheel@v3.4.1
+        uses: pypa/cibuildwheel@v4.2.0
         env:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_BUILD: "cp38-* cp313t-*"
